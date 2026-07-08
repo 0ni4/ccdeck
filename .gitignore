@@ -4,8 +4,12 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Local Claude Code settings (per-user; contains local paths)
-.claude/settings.local.json
+# PyInstaller build artifacts (distribute the exe via Releases, not git)
+build/
+dist/
+
+# Claude Code working config (per-developer; not part of the app)
+.claude/
 
 # OS / editor
 .DS_Store

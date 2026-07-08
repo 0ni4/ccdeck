@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -17,7 +18,11 @@ from .chat import handle_chat_ws
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("api")
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+# In a PyInstaller build the web assets are unpacked under sys._MEIPASS.
+if getattr(sys, "frozen", False):
+    WEB_DIR = Path(getattr(sys, "_MEIPASS")) / "web"
+else:
+    WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 app = FastAPI(title="ccdeck")
 

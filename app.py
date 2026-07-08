@@ -7,6 +7,7 @@ instead (via --browser or automatic fallback).
 Usage:
     python app.py             # desktop window
     python app.py --browser   # open in the browser
+    python app.py --no-window # run the server only (no window/browser)
     python app.py --port 9000
 """
 
@@ -19,6 +20,8 @@ import time
 import urllib.request
 
 import uvicorn
+
+from server.main import app as fastapi_app
 
 
 def find_free_port(preferred: int) -> int:
@@ -47,12 +50,16 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--browser", action="store_true",
                         help="open in the default browser instead of pywebview")
+    parser.add_argument("--no-window", action="store_true",
+                        help="run the server only, without opening any window")
     args = parser.parse_args()
 
     port = find_free_port(args.port)
     url = f"http://127.0.0.1:{port}"
 
-    config = uvicorn.Config("server.main:app", host="127.0.0.1", port=port,
+    # pass the app object directly (not an import string) so it resolves in a
+    # frozen build and no reloader/worker subprocess is spawned
+    config = uvicorn.Config(fastapi_app, host="127.0.0.1", port=port,
                             log_level="warning")
     server = uvicorn.Server(config)
     thread = threading.Thread(target=server.run, daemon=True)
@@ -63,10 +70,10 @@ def main() -> None:
     print(f"ccdeck: {url}")
 
     use_browser = args.browser
-    if not use_browser:
+    if not args.no_window and not use_browser:
         try:
             import webview
-            window = webview.create_window(
+            webview.create_window(
                 "ccdeck", url, width=1360, height=880,
                 background_color="#14151a")
             webview.start()
@@ -74,9 +81,10 @@ def main() -> None:
             print(f"Could not start pywebview ({e}); opening in the browser.")
             use_browser = True
 
-    if use_browser:
-        import webbrowser
-        webbrowser.open(url)
+    if args.no_window or use_browser:
+        if use_browser:
+            import webbrowser
+            webbrowser.open(url)
         try:
             while thread.is_alive():
                 time.sleep(1)
@@ -88,4 +96,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()  # required for frozen (PyInstaller) builds
     main()

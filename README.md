@@ -45,6 +45,19 @@ python -m venv .venv
 
 Or double-click `start.bat`.
 
+## Build a standalone .exe
+
+```powershell
+.\.venv\Scripts\pip install pyinstaller
+.\.venv\Scripts\pyinstaller ccdeck.spec --noconfirm
+```
+
+This produces a single `dist\ccdeck.exe` (~22MB) that launches as a desktop
+window — no Python install needed to run it. It does **not** bundle the Claude
+Code CLI, so an installed `claude` must be on `PATH` (or set `CLAUDE_CLI_PATH`).
+Edit the `ONEFILE` / `CONSOLE` flags at the top of `ccdeck.spec` for a folder
+build or a debug console.
+
 ## Architecture
 
 ```

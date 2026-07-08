@@ -27,7 +27,10 @@ import asyncio
 import json
 import logging
 import os
+import shutil
+import sys
 import uuid as uuid_mod
+from pathlib import Path
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -55,6 +58,27 @@ except ImportError:  # pragma: no cover
 log = logging.getLogger("chat")
 
 PERMISSION_TIMEOUT_S = 300
+
+
+def resolve_cli_path() -> str | None:
+    """Path to the claude CLI to run, or None to let the SDK use its bundled one.
+
+    Frozen (PyInstaller) builds do not ship the SDK's bundled claude executable
+    (it is ~235MB), so there we locate an installed CLI. `CLAUDE_CLI_PATH`
+    always wins if set.
+    """
+    override = os.environ.get("CLAUDE_CLI_PATH")
+    if override:
+        return override
+    if getattr(sys, "frozen", False):
+        found = shutil.which("claude")
+        if found:
+            return found
+        exe = "claude.exe" if os.name == "nt" else "claude"
+        candidate = Path.home() / ".local" / "bin" / exe
+        if candidate.exists():
+            return str(candidate)
+    return None
 
 
 def _dump_input(data: Any) -> str:
@@ -181,10 +205,9 @@ class ChatSession:
             # read user/project settings (CLAUDE.md, MCP, etc.) like normal claude code
             "setting_sources": ["user", "project", "local"],
         }
-        # By default the SDK's bundled claude executable is used. To use an
-        # already-installed CLI, set the CLAUDE_CLI_PATH environment variable.
-        if os.environ.get("CLAUDE_CLI_PATH"):
-            opts_kwargs["cli_path"] = os.environ["CLAUDE_CLI_PATH"]
+        cli_path = resolve_cli_path()
+        if cli_path:
+            opts_kwargs["cli_path"] = cli_path
         if start.get("resume"):
             opts_kwargs["resume"] = start["resume"]
         if start.get("model"):
