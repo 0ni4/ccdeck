@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ccdeck</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">⧉ ccdeck</span>
+      <button id="btn-refresh" title="Reload">⟳</button>
+    </div>
+
+    <div class="global-search-wrap">
+      <input id="global-search" type="text" placeholder="🔍 Search all sessions…" autocomplete="off">
+    </div>
+
+    <div id="browse-pane">
+      <div id="project-list" class="scroll-area"></div>
+      <div class="sidebar-sessions">
+        <input id="session-filter" type="text" placeholder="Filter this project…" autocomplete="off">
+        <div id="session-list" class="scroll-area"></div>
+      </div>
+    </div>
+
+    <div id="search-pane" class="hidden">
+      <div class="search-pane-head">
+        <span id="search-count" class="dim"></span>
+        <button id="btn-search-clear" class="btn small">✕ Clear</button>
+      </div>
+      <div id="search-results" class="scroll-area"></div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <header id="main-header">
+      <div class="header-left">
+        <h1 id="session-title">Select a session</h1>
+        <div id="session-meta" class="meta-row"></div>
+        <div id="session-stats" class="stats-row"></div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-new-session" class="btn primary">+ New session</button>
+        <button id="btn-resume" class="btn accent" disabled>▶ Resume this session</button>
+      </div>
+    </header>
+
+    <div id="transcript" class="scroll-area">
+      <div class="empty-state">
+        <p>Pick a project, then a session from the left to view its history.</p>
+      </div>
+    </div>
+
+    <div id="chat-bar" class="hidden">
+      <div id="chat-status">
+        <span id="conn-dot" class="dot"></span>
+        <span id="chat-status-text">Not connected</span>
+        <span id="chat-cost"></span>
+        <button id="btn-interrupt" class="btn small danger hidden">■ Stop</button>
+        <button id="btn-disconnect" class="btn small hidden">Disconnect</button>
+      </div>
+      <div id="composer">
+        <textarea id="chat-input" rows="3" placeholder="Type a message (Ctrl+Enter to send)"></textarea>
+        <button id="btn-send" class="btn primary">Send</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- shared model suggestions -->
+<datalist id="models">
+  <option value="">(default)</option>
+  <option value="opus"></option>
+  <option value="sonnet"></option>
+  <option value="haiku"></option>
+  <option value="claude-fable-5"></option>
+  <option value="claude-opus-4-8"></option>
+  <option value="claude-sonnet-5"></option>
+</datalist>
+
+<!-- session row action menu -->
+<div id="session-menu" class="menu hidden">
+  <button data-act="rename">✎ Rename…</button>
+  <button data-act="fork">⑂ Fork</button>
+  <button data-act="tag">🏷 Set tag…</button>
+  <button data-act="resume">▶ Resume</button>
+  <button data-act="delete" class="danger">🗑 Delete…</button>
+</div>
+
+<!-- New session modal -->
+<div id="modal-new" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>New session</h2>
+    <label>Working directory (cwd)</label>
+    <input id="new-cwd" type="text" list="known-paths" placeholder="c:\Projects\myapp">
+    <datalist id="known-paths"></datalist>
+    <label>Model (optional)</label>
+    <input id="new-model" type="text" list="models" placeholder="(default)">
+    <label>Permission mode</label>
+    <select id="new-permission-mode">
+      <option value="default">default — ask before each tool</option>
+      <option value="acceptEdits" selected>acceptEdits — auto-allow file edits</option>
+      <option value="plan">plan — planning mode</option>
+      <option value="bypassPermissions">bypassPermissions — auto-allow everything (careful)</option>
+    </select>
+    <div class="modal-actions">
+      <button id="btn-new-cancel" class="btn">Cancel</button>
+      <button id="btn-new-start" class="btn primary">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Resume permission-mode modal -->
+<div id="modal-resume" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Resume session</h2>
+    <p id="resume-info" class="dim"></p>
+    <label>Model (optional)</label>
+    <input id="resume-model" type="text" list="models" placeholder="(default)">
+    <label>Permission mode</label>
+    <select id="resume-permission-mode">
+      <option value="default">default — ask before each tool</option>
+      <option value="acceptEdits" selected>acceptEdits — auto-allow file edits</option>
+      <option value="plan">plan — planning mode</option>
+      <option value="bypassPermissions">bypassPermissions — auto-allow everything (careful)</option>
+    </select>
+    <div class="modal-actions">
+      <button id="btn-resume-cancel" class="btn">Cancel</button>
+      <button id="btn-resume-start" class="btn accent">Resume</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tool permission modal -->
+<div id="modal-permission" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Tool permission</h2>
+    <p>Claude wants to run the following tool:</p>
+    <div class="perm-tool" id="perm-tool-name"></div>
+    <pre id="perm-tool-input" class="code-box"></pre>
+    <div class="modal-actions">
+      <button id="btn-perm-deny" class="btn danger">Deny</button>
+      <button id="btn-perm-allow" class="btn primary">Allow</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic text-input modal (rename / tag / fork title) -->
+<div id="modal-input" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2 id="input-title"></h2>
+    <label id="input-label"></label>
+    <input id="input-field" type="text" autocomplete="off">
+    <div class="modal-actions">
+      <button id="btn-input-cancel" class="btn">Cancel</button>
+      <button id="btn-input-ok" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic confirm modal (delete) -->
+<div id="modal-confirm" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <div class="modal-actions">
+      <button id="btn-confirm-cancel" class="btn">Cancel</button>
+      <button id="btn-confirm-ok" class="btn danger">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
