@@ -14,10 +14,20 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import socket
+import sys
 import threading
 import time
 import urllib.request
+
+# In a windowed (console=False) PyInstaller build there is no console, so
+# sys.stdout / sys.stderr are None. uvicorn's log config calls
+# sys.stdout.isatty() at startup and would crash — give them a sink.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 import uvicorn
 
