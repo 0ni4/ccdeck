@@ -70,17 +70,6 @@
   </main>
 </div>
 
-<!-- shared model suggestions -->
-<datalist id="models">
-  <option value="">(default)</option>
-  <option value="opus"></option>
-  <option value="sonnet"></option>
-  <option value="haiku"></option>
-  <option value="claude-fable-5"></option>
-  <option value="claude-opus-4-8"></option>
-  <option value="claude-sonnet-5"></option>
-</datalist>
-
 <!-- session row action menu -->
 <div id="session-menu" class="menu hidden">
   <button data-act="rename">✎ Rename…</button>
@@ -97,8 +86,14 @@
     <label>Working directory (cwd)</label>
     <input id="new-cwd" type="text" list="known-paths" placeholder="c:\Projects\myapp">
     <datalist id="known-paths"></datalist>
-    <label>Model (optional)</label>
-    <input id="new-model" type="text" list="models" value="sonnet" placeholder="(default)">
+    <label>Model</label>
+    <select id="new-model">
+      <option value="sonnet" selected>Sonnet — fast (default)</option>
+      <option value="opus">Opus — most capable</option>
+      <option value="haiku">Haiku — fastest</option>
+      <option value="claude-fable-5">Fable</option>
+      <option value="">Gateway default</option>
+    </select>
     <label>Permission mode</label>
     <select id="new-permission-mode">
       <option value="default">default — ask before each tool</option>
@@ -118,8 +113,14 @@
   <div class="modal">
     <h2>Resume session</h2>
     <p id="resume-info" class="dim"></p>
-    <label>Model (optional)</label>
-    <input id="resume-model" type="text" list="models" value="sonnet" placeholder="(default)">
+    <label>Model</label>
+    <select id="resume-model">
+      <option value="sonnet" selected>Sonnet — fast (default)</option>
+      <option value="opus">Opus — most capable</option>
+      <option value="haiku">Haiku — fastest</option>
+      <option value="claude-fable-5">Fable</option>
+      <option value="">Gateway default</option>
+    </select>
     <label>Permission mode</label>
     <select id="resume-permission-mode">
       <option value="default">default — ask before each tool</option>
