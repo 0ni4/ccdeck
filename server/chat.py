@@ -60,6 +60,41 @@ log = logging.getLogger("chat")
 PERMISSION_TIMEOUT_S = 300
 
 
+def _suppress_child_console_windows() -> None:
+    """Hide console windows for child processes on Windows.
+
+    When this process has no console of its own (a windowed PyInstaller build),
+    spawning the claude CLI — a console app — makes Windows pop up a console
+    window for it. The SDK spawns via anyio, which ends up in subprocess.Popen,
+    so we patch Popen to add CREATE_NO_WINDOW. Applied only when we actually
+    have no console, so a normal terminal run is unaffected.
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        has_console = ctypes.windll.kernel32.GetConsoleWindow() != 0
+    except Exception:
+        has_console = True
+    if has_console:
+        return
+    import subprocess
+    orig_init = subprocess.Popen.__init__
+    if getattr(orig_init, "_ccdeck_patched", False):
+        return
+    create_no_window = 0x08000000  # CREATE_NO_WINDOW
+
+    def patched_init(self, *args, **kwargs):
+        kwargs["creationflags"] = kwargs.get("creationflags", 0) | create_no_window
+        orig_init(self, *args, **kwargs)
+
+    patched_init._ccdeck_patched = True
+    subprocess.Popen.__init__ = patched_init
+
+
+_suppress_child_console_windows()
+
+
 def resolve_cli_path() -> str | None:
     """Path to the claude CLI to run, or None to let the SDK use its bundled one.
 
