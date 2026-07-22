@@ -1,4 +1,4 @@
-"""ccdeck — FastAPI backend."""
+"""cc-home — FastAPI backend."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ if getattr(sys, "frozen", False):
 else:
     WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
-app = FastAPI(title="ccdeck")
+app = FastAPI(title="cc-home")
 
 
 def _valid_sid(session_id: str) -> bool:

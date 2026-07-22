@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec for ccdeck.
+"""PyInstaller spec for cc-home.
 
 Toggle ONEFILE / CONSOLE below. The SDK's bundled claude executable (~235MB) is
 intentionally excluded — frozen builds use an installed `claude` CLI (see
@@ -50,15 +50,15 @@ pyz = PYZ(a.pure)
 if ONEFILE:
     exe = EXE(
         pyz, a.scripts, a.binaries, a.datas, [],
-        name="ccdeck", debug=False, bootloader_ignore_signals=False,
+        name="cc-home", debug=False, bootloader_ignore_signals=False,
         strip=False, upx=False, runtime_tmpdir=None,
         console=CONSOLE, disable_windowed_traceback=False,
     )
 else:
     exe = EXE(
         pyz, a.scripts, [], exclude_binaries=True,
-        name="ccdeck", debug=False, bootloader_ignore_signals=False,
+        name="cc-home", debug=False, bootloader_ignore_signals=False,
         strip=False, upx=False, console=CONSOLE,
         disable_windowed_traceback=False,
     )
-    coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="ccdeck")
+    coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="cc-home")

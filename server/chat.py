@@ -80,7 +80,7 @@ def _suppress_child_console_windows() -> None:
         return
     import subprocess
     orig_init = subprocess.Popen.__init__
-    if getattr(orig_init, "_ccdeck_patched", False):
+    if getattr(orig_init, "_cchome_patched", False):
         return
     create_no_window = 0x08000000  # CREATE_NO_WINDOW
 
@@ -88,7 +88,7 @@ def _suppress_child_console_windows() -> None:
         kwargs["creationflags"] = kwargs.get("creationflags", 0) | create_no_window
         orig_init(self, *args, **kwargs)
 
-    patched_init._ccdeck_patched = True
+    patched_init._cchome_patched = True
     subprocess.Popen.__init__ = patched_init
 
 

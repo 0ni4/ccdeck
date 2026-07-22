@@ -1,4 +1,4 @@
-"""ccdeck — desktop launcher.
+"""cc-home — desktop launcher.
 
 Starts uvicorn on a background thread and opens the UI in a native pywebview
 (WebView2) window. When pywebview is unavailable, opens the default browser
@@ -56,7 +56,7 @@ def wait_for_server(url: str, timeout: float = 15.0) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="ccdeck")
+    parser = argparse.ArgumentParser(description="cc-home")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--browser", action="store_true",
                         help="open in the default browser instead of pywebview")
@@ -77,14 +77,14 @@ def main() -> None:
 
     if not wait_for_server(url):
         raise SystemExit("Failed to start the server")
-    print(f"ccdeck: {url}")
+    print(f"cc-home: {url}")
 
     use_browser = args.browser
     if not args.no_window and not use_browser:
         try:
             import webview
             webview.create_window(
-                "ccdeck", url, width=1360, height=880,
+                "cc-home", url, width=1360, height=880,
                 background_color="#14151a")
             webview.start()
         except Exception as e:
