@@ -45,6 +45,9 @@
       <div class="global-search-wrap">
         <input id="skill-search" type="text" placeholder="🧩 Search skills…" autocomplete="off">
       </div>
+      <div class="skills-toolbar">
+        <button id="btn-new-skill" class="btn small">+ New skill</button>
+      </div>
       <div id="skills-list" class="scroll-area"></div>
     </div>
   </aside>
@@ -173,6 +176,23 @@
     <div class="modal-actions">
       <button id="btn-input-cancel" class="btn">Cancel</button>
       <button id="btn-input-ok" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- New skill modal -->
+<div id="modal-skill" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>New skill</h2>
+    <label>Name — invoked as /name (lowercase letters, digits, hyphens)</label>
+    <input id="skill-name" type="text" placeholder="my-skill" autocomplete="off">
+    <label>Description — one line: when should Claude use it?</label>
+    <input id="skill-desc" type="text" placeholder="Use this when…" autocomplete="off">
+    <label>Instructions — what Claude should do</label>
+    <textarea id="skill-body" rows="8" placeholder="Write the steps / guidance for this skill…"></textarea>
+    <div class="modal-actions">
+      <button id="btn-skill-cancel" class="btn">Cancel</button>
+      <button id="btn-skill-create" class="btn primary">Create</button>
     </div>
   </div>
 </div>

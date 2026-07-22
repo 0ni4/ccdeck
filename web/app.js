@@ -1045,6 +1045,35 @@ function skillMenuOpen() {
   return !skillMenu.classList.contains("hidden") && skillMenuItems.length > 0;
 }
 
+// ---------------------------------------------------------------------------
+// create a personal skill
+
+$("btn-new-skill").onclick = () => {
+  $("skill-name").value = "";
+  $("skill-desc").value = "";
+  $("skill-body").value = "";
+  $("modal-skill").classList.remove("hidden");
+  $("skill-name").focus();
+};
+$("btn-skill-cancel").onclick = () => $("modal-skill").classList.add("hidden");
+$("btn-skill-create").onclick = async () => {
+  const name = $("skill-name").value.trim();
+  if (!name) { $("skill-name").focus(); return; }
+  try {
+    const res = await apiPost("/api/skills/create", {
+      name,
+      description: $("skill-desc").value,
+      body: $("skill-body").value,
+    });
+    $("modal-skill").classList.add("hidden");
+    skillsLoaded = false;
+    loadSkills();  // refresh the on-disk description map
+    toast(`Created ${res.command} — start a new session to use it`);
+  } catch (e) {
+    toast("Create failed: " + e.message, true);
+  }
+};
+
 // init
 if (!skillsLoaded) loadSkills();  // preload so / autocomplete works right away
 loadProjects().then(() => {

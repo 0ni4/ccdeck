@@ -19,6 +19,7 @@ SKILLS_DIR = CLAUDE_DIR / "skills"
 PLUGINS_DIR = CLAUDE_DIR / "plugins"
 
 _FM_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
+_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
 
 def _parse_frontmatter(text: str) -> dict[str, str]:
@@ -88,3 +89,23 @@ def list_skills() -> list[dict[str, Any]]:
 
     skills.sort(key=lambda s: (s["kind"] != "personal", s["source"].lower(), s["name"].lower()))
     return skills
+
+
+def create_skill(name: str, description: str, body: str) -> dict[str, Any]:
+    """Create a personal skill at ~/.claude/skills/<name>/SKILL.md.
+
+    Raises ValueError for a bad name or an existing skill. It becomes available
+    the next time a session starts.
+    """
+    name = (name or "").strip().lower()
+    if not _SLUG_RE.fullmatch(name):
+        raise ValueError("Name must be lowercase letters/digits/hyphens (max 64, no spaces).")
+    skill_dir = SKILLS_DIR / name
+    md = skill_dir / "SKILL.md"
+    if md.exists():
+        raise ValueError(f"A skill named '{name}' already exists.")
+    desc = " ".join((description or "").split())
+    content = f"---\nname: {name}\ndescription: {desc}\n---\n\n{(body or '').strip()}\n"
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    md.write_text(content, encoding="utf-8")
+    return {"name": name, "command": f"/{name}", "path": str(md)}

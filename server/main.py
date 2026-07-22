@@ -69,6 +69,23 @@ def api_skills():
     return skills.list_skills()
 
 
+class NewSkillBody(BaseModel):
+    name: str
+    description: str = ""
+    body: str = ""
+
+
+@app.post("/api/skills/create")
+def api_create_skill(body: NewSkillBody):
+    try:
+        return skills.create_skill(body.name, body.description, body.body)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        log.exception("create skill failed")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
 @app.get("/api/projects/{project_id}/sessions/{session_id}")
 def api_transcript(project_id: str, session_id: str,
                    before: Optional[int] = None, limit: int = 200):
