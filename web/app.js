@@ -364,6 +364,11 @@ function handleChatEvent(e) {
       if (e.sessionId) {
         setChatStatus(`Session ${e.sessionId.slice(0, 8)}… (${e.model || ""})`, "busy");
       }
+      if (Array.isArray(e.skills)) {
+        availableSkills = e.skills;
+        loadSkills();          // ensure the description map is loaded
+        rebuildSkillItems();   // now / autocomplete + Skills tab reflect this session
+      }
       break;
     case "delta": {
       const b = ensureStreamBubble();
@@ -887,38 +892,51 @@ function switchTab(which) {
   $("tab-skills").classList.toggle("active", isSkills);
   $("sessions-tab").classList.toggle("hidden", isSkills);
   $("skills-tab").classList.toggle("hidden", !isSkills);
-  if (isSkills && !skillsLoaded) loadSkills();
+  if (isSkills) { loadSkills(); renderSkills(); }
 }
 $("tab-sessions").onclick = () => switchTab("sessions");
 $("tab-skills").onclick = () => switchTab("skills");
 
-let skillsData = [];
+// The runnable skills are the ones the current session reports as available
+// (init.skills — only these resolve via /name). Descriptions are enriched
+// best-effort from /api/skills (installed SKILL.md files on disk).
+let skillDescMap = {};    // name -> {description, source}
+let availableSkills = []; // names from the session's init event
+let skillItems = [];      // merged, runnable list
 let skillsLoaded = false;
 
 async function loadSkills() {
-  const el = $("skills-list");
-  el.innerHTML = '<div class="skills-empty">Loading…</div>';
+  if (skillsLoaded) return;
+  skillsLoaded = true;
   try {
-    skillsData = await api("/api/skills");
-    skillsLoaded = true;
-    renderSkills();
-  } catch (e) {
-    el.innerHTML = '<div class="skills-empty">Failed to load skills.</div>';
-  }
+    const disk = await api("/api/skills");
+    skillDescMap = {};
+    for (const s of disk) skillDescMap[s.name] = { description: s.description, source: s.source };
+  } catch (e) { /* descriptions are best-effort */ }
+  rebuildSkillItems();
+}
+
+function rebuildSkillItems() {
+  skillItems = (availableSkills || []).map((name) => {
+    const d = skillDescMap[name] || {};
+    return { name, command: "/" + name, description: d.description || "",
+             source: d.source || "session" };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  renderSkills();
 }
 
 function renderSkills() {
-  const filter = $("skill-search").value.toLowerCase();
   const el = $("skills-list");
+  const filter = $("skill-search").value.toLowerCase();
   el.innerHTML = "";
-  const items = skillsData.filter((s) => {
-    const hay = (s.command + " " + s.description + " " + s.source).toLowerCase();
-    return !filter || hay.includes(filter);
-  });
-  if (items.length === 0) {
-    el.innerHTML = '<div class="skills-empty">No skills found.</div>';
+  if (skillItems.length === 0) {
+    el.innerHTML = '<div class="skills-empty">Start or resume a session to load its ' +
+                   'available skills, then type / in the message box.</div>';
     return;
   }
+  const items = skillItems.filter((s) =>
+    !filter || (s.command + " " + s.description).toLowerCase().includes(filter));
+  if (items.length === 0) { el.innerHTML = '<div class="skills-empty">No matches.</div>'; return; }
   for (const s of items) {
     const div = document.createElement("div");
     div.className = "skill-item";
@@ -974,7 +992,7 @@ function updateSkillMenu() {
   if (token === null) { hideSkillMenu(); return; }
   const q = token.slice(1).toLowerCase();
   // match on the command name (what the user is typing after /), not descriptions
-  const matches = skillsData
+  const matches = skillItems
     .filter((s) => s.command.toLowerCase().includes(q))
     .sort((a, b) => {
       // prefix matches first, then alphabetical

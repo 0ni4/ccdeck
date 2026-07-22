@@ -174,11 +174,15 @@ class ChatSession:
             if getattr(msg, "subtype", "") == "init":
                 data = getattr(msg, "data", {}) or {}
                 self.session_id = data.get("session_id", "") or self.session_id
+                skills = data.get("skills")
                 await self.send({
                     "event": "init",
                     "sessionId": self.session_id,
                     "model": data.get("model", ""),
                     "cwd": data.get("cwd", ""),
+                    # names of skills actually available in this session (the
+                    # ones that /name can invoke) — used by the Skills UI
+                    "skills": skills if isinstance(skills, list) else [],
                 })
         elif StreamEvent is not None and isinstance(msg, StreamEvent):
             ev = getattr(msg, "event", {}) or {}
