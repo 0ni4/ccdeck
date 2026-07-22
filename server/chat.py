@@ -249,7 +249,7 @@ class ChatSession:
             # expose installed skills so the GUI's Skills tab (/name) can invoke them
             "skills": "all",
         }
-        cli_path = resolve_cli_path()
+        cli_path = (start.get("cliPath") or "").strip() or resolve_cli_path()
         if cli_path:
             opts_kwargs["cli_path"] = cli_path
         if start.get("resume"):

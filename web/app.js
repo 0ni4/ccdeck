@@ -524,9 +524,12 @@ $("chat-input").addEventListener("keydown", (ev) => {
     if (ev.key === "Tab") { ev.preventDefault(); acceptSkill(skillMenuIdx, false); return; }
     if (ev.key === "Escape") { ev.preventDefault(); hideSkillMenu(); return; }
   }
-  if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
-    ev.preventDefault();
-    sendUserMessage();
+  if (ev.key === "Enter") {
+    const sendOnEnter = prefs.sendKey === "enter" && !ev.shiftKey;
+    if (sendOnEnter || ev.ctrlKey || ev.metaKey) {
+      ev.preventDefault();
+      sendUserMessage();
+    }
   }
 });
 $("chat-input").addEventListener("input", updateSkillMenu);
@@ -539,6 +542,7 @@ $("btn-disconnect").onclick = disconnectChat;
 // new session
 $("btn-new-session").onclick = () => {
   const def = (state.currentSession && state.currentSession.cwd) ||
+              prefs.defaultCwd ||
               (state.projects[0] && state.projects[0].path) || "";
   if (def) $("new-cwd").value = def;
   $("modal-new").classList.remove("hidden");
@@ -562,6 +566,7 @@ $("btn-new-start").onclick = () => {
     cwd,
     permissionMode: $("new-permission-mode").value,
     ...(model ? { model } : {}),
+    ...(prefs.cliPath ? { cliPath: prefs.cliPath } : {}),
   });
   $("chat-input").focus();
 };
@@ -586,6 +591,7 @@ $("btn-resume-start").onclick = () => {
     resume: s.sessionId,
     permissionMode: $("resume-permission-mode").value,
     ...(model ? { model } : {}),
+    ...(prefs.cliPath ? { cliPath: prefs.cliPath } : {}),
   });
   $("chat-input").focus();
 };
@@ -1215,7 +1221,66 @@ $("btn-skill-create").onclick = async () => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// preferences (stored in localStorage, applied to the UI + session start)
+
+const PREF_DEFAULTS = {
+  model: "sonnet",
+  permissionMode: "acceptEdits",
+  sendKey: "ctrl-enter",
+  defaultCwd: "",
+  scale: "normal",
+  cliPath: "",
+};
+let prefs = loadPrefs();
+
+function loadPrefs() {
+  try {
+    return { ...PREF_DEFAULTS, ...JSON.parse(localStorage.getItem("ccHomePrefs") || "{}") };
+  } catch (e) {
+    return { ...PREF_DEFAULTS };
+  }
+}
+
+function applyPrefs() {
+  $("new-model").value = prefs.model;
+  $("resume-model").value = prefs.model;
+  $("new-permission-mode").value = prefs.permissionMode;
+  $("resume-permission-mode").value = prefs.permissionMode;
+  document.body.style.zoom =
+    prefs.scale === "small" ? "0.9" : prefs.scale === "large" ? "1.12" : "1";
+  $("chat-input").placeholder = prefs.sendKey === "enter"
+    ? "Type a message (Enter to send, Shift+Enter for newline) — type / for skills"
+    : "Type a message (Ctrl+Enter to send) — type / for skills";
+}
+
+$("btn-settings").onclick = () => {
+  $("set-model").value = prefs.model;
+  $("set-permission").value = prefs.permissionMode;
+  $("set-sendkey").value = prefs.sendKey;
+  $("set-cwd").value = prefs.defaultCwd;
+  $("set-scale").value = prefs.scale;
+  $("set-clipath").value = prefs.cliPath;
+  $("modal-settings").classList.remove("hidden");
+};
+$("btn-settings-cancel").onclick = () => $("modal-settings").classList.add("hidden");
+$("btn-settings-save").onclick = () => {
+  prefs = {
+    model: $("set-model").value,
+    permissionMode: $("set-permission").value,
+    sendKey: $("set-sendkey").value,
+    defaultCwd: $("set-cwd").value.trim(),
+    scale: $("set-scale").value,
+    cliPath: $("set-clipath").value.trim(),
+  };
+  localStorage.setItem("ccHomePrefs", JSON.stringify(prefs));
+  applyPrefs();
+  $("modal-settings").classList.add("hidden");
+  toast("Settings saved");
+};
+
 // init
+applyPrefs();
 if (!skillsLoaded) loadSkills();  // preload so / autocomplete works right away
 loadProjects().then(() => {
   if (state.projects.length > 0) selectProject(state.projects[0].projectId);

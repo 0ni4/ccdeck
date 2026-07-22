@@ -18,6 +18,8 @@ behind an external LLM gateway, inheriting whatever the CLI is configured with.
   it (`/skill`) in a session, with the output shown in the transcript.
 - **MCP tab** — view and manage MCP servers per scope (global, per-directory
   private, and shared `.mcp.json`); add and remove servers from the GUI.
+- **Settings** (gear, bottom-left) — defaults for model, permission mode, send
+  key, working directory, UI scale, and an optional Claude CLI path.
 - **Session actions** — rename, tag, fork, and delete from a per-session menu.
 - **Resume / new session** — resume a session or start a new one in any directory.
 - **Model selection** — choose a model when starting or resuming.

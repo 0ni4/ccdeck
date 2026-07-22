@@ -62,6 +62,10 @@
       </div>
       <div id="mcp-list" class="scroll-area"></div>
     </div>
+
+    <div class="sidebar-footer">
+      <button id="btn-settings" title="Settings">⚙ Settings</button>
+    </div>
   </aside>
 
   <main id="main">
@@ -188,6 +192,47 @@
     <div class="modal-actions">
       <button id="btn-input-cancel" class="btn">Cancel</button>
       <button id="btn-input-ok" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="modal-settings" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Settings</h2>
+    <label>Default model</label>
+    <select id="set-model">
+      <option value="sonnet">Sonnet — fast</option>
+      <option value="opus">Opus — most capable</option>
+      <option value="haiku">Haiku — fastest</option>
+      <option value="claude-fable-5">Fable</option>
+      <option value="">Gateway default</option>
+    </select>
+    <label>Default permission mode</label>
+    <select id="set-permission">
+      <option value="default">default — ask before each tool</option>
+      <option value="acceptEdits">acceptEdits — auto-allow file edits</option>
+      <option value="plan">plan — planning mode</option>
+      <option value="bypassPermissions">bypassPermissions — auto-allow everything</option>
+    </select>
+    <label>Send message with</label>
+    <select id="set-sendkey">
+      <option value="ctrl-enter">Ctrl+Enter (Enter = newline)</option>
+      <option value="enter">Enter (Shift+Enter = newline)</option>
+    </select>
+    <label>Default working directory (optional)</label>
+    <input id="set-cwd" type="text" placeholder="c:\Projects\myapp" autocomplete="off">
+    <label>UI scale</label>
+    <select id="set-scale">
+      <option value="small">Compact</option>
+      <option value="normal">Normal</option>
+      <option value="large">Large</option>
+    </select>
+    <label>Claude CLI path (optional — if "claude" is not on PATH)</label>
+    <input id="set-clipath" type="text" placeholder="C:\Users\…\.local\bin\claude.exe" autocomplete="off">
+    <div class="modal-actions">
+      <button id="btn-settings-cancel" class="btn">Cancel</button>
+      <button id="btn-settings-save" class="btn primary">Save</button>
     </div>
   </div>
 </div>

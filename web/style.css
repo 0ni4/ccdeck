@@ -63,6 +63,17 @@ body {
 }
 #global-search:focus { border-color: var(--accent); }
 
+/* ---------- sidebar footer (settings) ---------- */
+.sidebar-footer {
+  border-top: 1px solid var(--border); padding: 6px 8px; flex-shrink: 0;
+}
+.sidebar-footer button {
+  width: 100%; text-align: left; background: none; border: none;
+  color: var(--dim); cursor: pointer; font-size: 12px; padding: 6px 8px;
+  border-radius: 6px;
+}
+.sidebar-footer button:hover { background: var(--bg3); color: var(--text); }
+
 /* ---------- sidebar tabs ---------- */
 .tab-bar { display: flex; border-bottom: 1px solid var(--border); }
 .tab-bar .tab {
