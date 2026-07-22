@@ -242,6 +242,8 @@ class ChatSession:
             "system_prompt": {"type": "preset", "preset": "claude_code"},
             # read user/project settings (CLAUDE.md, MCP, etc.) like normal claude code
             "setting_sources": ["user", "project", "local"],
+            # expose installed skills so the GUI's Skills tab (/name) can invoke them
+            "skills": "all",
         }
         cli_path = resolve_cli_path()
         if cli_path:

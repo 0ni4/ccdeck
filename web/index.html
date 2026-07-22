@@ -14,24 +14,38 @@
       <button id="btn-refresh" title="Reload">⟳</button>
     </div>
 
-    <div class="global-search-wrap">
-      <input id="global-search" type="text" placeholder="🔍 Search all sessions…" autocomplete="off">
+    <div class="tab-bar">
+      <button id="tab-sessions" class="tab active">Sessions</button>
+      <button id="tab-skills" class="tab">Skills</button>
     </div>
 
-    <div id="browse-pane">
-      <div id="project-list" class="scroll-area"></div>
-      <div class="sidebar-sessions">
-        <input id="session-filter" type="text" placeholder="Filter this project…" autocomplete="off">
-        <div id="session-list" class="scroll-area"></div>
+    <div id="sessions-tab">
+      <div class="global-search-wrap">
+        <input id="global-search" type="text" placeholder="🔍 Search all sessions…" autocomplete="off">
+      </div>
+
+      <div id="browse-pane">
+        <div id="project-list" class="scroll-area"></div>
+        <div class="sidebar-sessions">
+          <input id="session-filter" type="text" placeholder="Filter this project…" autocomplete="off">
+          <div id="session-list" class="scroll-area"></div>
+        </div>
+      </div>
+
+      <div id="search-pane" class="hidden">
+        <div class="search-pane-head">
+          <span id="search-count" class="dim"></span>
+          <button id="btn-search-clear" class="btn small">✕ Clear</button>
+        </div>
+        <div id="search-results" class="scroll-area"></div>
       </div>
     </div>
 
-    <div id="search-pane" class="hidden">
-      <div class="search-pane-head">
-        <span id="search-count" class="dim"></span>
-        <button id="btn-search-clear" class="btn small">✕ Clear</button>
+    <div id="skills-tab" class="hidden">
+      <div class="global-search-wrap">
+        <input id="skill-search" type="text" placeholder="🧩 Search skills…" autocomplete="off">
       </div>
-      <div id="search-results" class="scroll-area"></div>
+      <div id="skills-list" class="scroll-area"></div>
     </div>
   </aside>
 

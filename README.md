@@ -14,6 +14,8 @@ behind an external LLM gateway, inheriting whatever the CLI is configured with.
   thinking; paged loading for large sessions.
 - **Full-text search** — search across all sessions with highlighted snippets.
 - **Session stats** — token counts, models used, and reply count per session.
+- **Skills tab** — browse installed skills (personal + plugins); click one to run
+  it (`/skill`) in a session, with the output shown in the transcript.
 - **Session actions** — rename, tag, fork, and delete from a per-session menu.
 - **Resume / new session** — resume a session or start a new one in any directory.
 - **Model selection** — choose a model when starting or resuming.

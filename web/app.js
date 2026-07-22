@@ -358,6 +358,11 @@ function handleChatEvent(e) {
   switch (e.event) {
     case "ready":
       setChatStatus("Connected — you can send a message", "on");
+      if (pendingSkillCommand) {
+        const cmd = pendingSkillCommand;
+        pendingSkillCommand = null;
+        runSkillCommand(cmd);
+      }
       break;
     case "init":
       state.liveSessionId = e.sessionId || "";
@@ -519,7 +524,10 @@ $("btn-new-session").onclick = () => {
   }
   $("modal-new").classList.remove("hidden");
 };
-$("btn-new-cancel").onclick = () => $("modal-new").classList.add("hidden");
+$("btn-new-cancel").onclick = () => {
+  pendingSkillCommand = null;
+  $("modal-new").classList.add("hidden");
+};
 $("btn-new-start").onclick = () => {
   const cwd = $("new-cwd").value.trim();
   if (!cwd) { $("new-cwd").focus(); return; }
@@ -857,6 +865,84 @@ async function pollState() {
   } catch (_) { /* transient; try again next tick */ }
 }
 setInterval(pollState, 4000);
+
+// ---------------------------------------------------------------------------
+// sidebar tabs + skills
+
+function switchTab(which) {
+  const isSkills = which === "skills";
+  $("tab-sessions").classList.toggle("active", !isSkills);
+  $("tab-skills").classList.toggle("active", isSkills);
+  $("sessions-tab").classList.toggle("hidden", isSkills);
+  $("skills-tab").classList.toggle("hidden", !isSkills);
+  if (isSkills && !skillsLoaded) loadSkills();
+}
+$("tab-sessions").onclick = () => switchTab("sessions");
+$("tab-skills").onclick = () => switchTab("skills");
+
+let skillsData = [];
+let skillsLoaded = false;
+
+async function loadSkills() {
+  const el = $("skills-list");
+  el.innerHTML = '<div class="skills-empty">Loading…</div>';
+  try {
+    skillsData = await api("/api/skills");
+    skillsLoaded = true;
+    renderSkills();
+  } catch (e) {
+    el.innerHTML = '<div class="skills-empty">Failed to load skills.</div>';
+  }
+}
+
+function renderSkills() {
+  const filter = $("skill-search").value.toLowerCase();
+  const el = $("skills-list");
+  el.innerHTML = "";
+  const items = skillsData.filter((s) => {
+    const hay = (s.command + " " + s.description + " " + s.source).toLowerCase();
+    return !filter || hay.includes(filter);
+  });
+  if (items.length === 0) {
+    el.innerHTML = '<div class="skills-empty">No skills found.</div>';
+    return;
+  }
+  for (const s of items) {
+    const div = document.createElement("div");
+    div.className = "skill-item";
+    div.title = "Run " + s.command;
+    div.innerHTML =
+      `<div class="sk-head"><span class="sk-name">${escapeHtml(s.command)}</span>` +
+      `<span class="badge sk-src">${escapeHtml(s.source)}</span></div>` +
+      (s.description ? `<div class="sk-desc">${escapeHtml(s.description)}</div>` : "");
+    div.onclick = () => runSkill(s);
+    el.appendChild(div);
+  }
+}
+$("skill-search").oninput = renderSkills;
+
+let pendingSkillCommand = null;
+
+// Send text as a chat message by reusing the composer send path.
+function runSkillCommand(cmd) {
+  $("chat-input").value = cmd;
+  sendUserMessage();
+}
+
+function runSkill(skill) {
+  if (state.ws && state.ws.readyState === WebSocket.OPEN) {
+    // a live session is connected — run the skill in it
+    runSkillCommand(skill.command);
+    return;
+  }
+  // no live session — start a new one, then auto-send the skill command
+  pendingSkillCommand = skill.command;
+  if (state.currentSession && state.currentSession.cwd) {
+    $("new-cwd").value = state.currentSession.cwd;
+  }
+  $("modal-new").classList.remove("hidden");
+  $("new-cwd").focus();
+}
 
 // init
 loadProjects().then(() => {

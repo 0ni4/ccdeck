@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import sessions, manage
+from . import sessions, manage, skills
 from .chat import handle_chat_ws
 
 logging.basicConfig(level=logging.INFO)
@@ -62,6 +62,11 @@ def api_search(q: str, limit: int = 60):
 @app.get("/api/state")
 def api_state():
     return {"version": sessions.state_version()}
+
+
+@app.get("/api/skills")
+def api_skills():
+    return skills.list_skills()
 
 
 @app.get("/api/projects/{project_id}/sessions/{session_id}")
