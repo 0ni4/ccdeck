@@ -17,6 +17,7 @@
     <div class="tab-bar">
       <button id="tab-sessions" class="tab active">Sessions</button>
       <button id="tab-skills" class="tab">Skills</button>
+      <button id="tab-mcp" class="tab">MCP</button>
     </div>
 
     <div id="sessions-tab">
@@ -49,6 +50,17 @@
         <button id="btn-new-skill" class="btn small">+ New skill</button>
       </div>
       <div id="skills-list" class="scroll-area"></div>
+    </div>
+
+    <div id="mcp-tab" class="hidden">
+      <div class="global-search-wrap mcp-dirbar">
+        <input id="mcp-cwd" type="text" placeholder="Directory for local/project servers…" autocomplete="off">
+        <button id="btn-mcp-load" class="btn small">Load</button>
+      </div>
+      <div class="skills-toolbar">
+        <button id="btn-new-mcp" class="btn small">+ Add server</button>
+      </div>
+      <div id="mcp-list" class="scroll-area"></div>
     </div>
   </aside>
 
@@ -176,6 +188,49 @@
     <div class="modal-actions">
       <button id="btn-input-cancel" class="btn">Cancel</button>
       <button id="btn-input-ok" class="btn primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add MCP server modal -->
+<div id="modal-mcp" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Add MCP server</h2>
+    <label>Name</label>
+    <input id="mcp-name" type="text" placeholder="my-server" autocomplete="off">
+    <label>Scope</label>
+    <select id="mcp-scope">
+      <option value="user">Global — all projects</option>
+      <option value="local">This directory — private</option>
+      <option value="project">This directory — shared (.mcp.json)</option>
+    </select>
+    <label>Transport</label>
+    <select id="mcp-transport">
+      <option value="stdio">stdio — local command</option>
+      <option value="http">http — remote URL</option>
+      <option value="sse">sse — remote URL</option>
+    </select>
+    <div id="mcp-stdio-fields">
+      <label>Command</label>
+      <input id="mcp-command" type="text" placeholder="npx" autocomplete="off">
+      <label>Args — one per line</label>
+      <textarea id="mcp-args" rows="2" placeholder="-y&#10;@modelcontextprotocol/server-filesystem"></textarea>
+      <label>Env — KEY=VALUE per line</label>
+      <textarea id="mcp-env" rows="2" placeholder="API_KEY=xxxxx"></textarea>
+    </div>
+    <div id="mcp-http-fields" class="hidden">
+      <label>URL</label>
+      <input id="mcp-url" type="text" placeholder="https://example.com/mcp" autocomplete="off">
+      <label>Headers — Name: Value per line</label>
+      <textarea id="mcp-headers" rows="2" placeholder="Authorization: Bearer …"></textarea>
+    </div>
+    <div id="mcp-cwd-row" class="hidden">
+      <label>Directory</label>
+      <input id="mcp-modal-cwd" type="text" placeholder="C:\path\to\project" autocomplete="off">
+    </div>
+    <div class="modal-actions">
+      <button id="btn-mcp-cancel" class="btn">Cancel</button>
+      <button id="btn-mcp-create" class="btn primary">Add</button>
     </div>
   </div>
 </div>

@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import sessions, manage, skills
+from . import sessions, manage, skills, mcp
 from .chat import handle_chat_ws
 
 logging.basicConfig(level=logging.INFO)
@@ -83,6 +83,56 @@ def api_create_skill(body: NewSkillBody):
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception as e:
         log.exception("create skill failed")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+@app.get("/api/mcp")
+def api_mcp_list(cwd: str = ""):
+    try:
+        return mcp.list_mcp(cwd or None)
+    except Exception as e:
+        log.exception("mcp list failed")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+class AddMcpBody(BaseModel):
+    name: str
+    scope: str = "user"
+    transport: str = "stdio"
+    command: str = ""
+    args: list[str] = []
+    url: str = ""
+    env: dict[str, str] = {}
+    headers: dict[str, str] = {}
+    cwd: str = ""
+
+
+@app.post("/api/mcp")
+def api_mcp_add(body: AddMcpBody):
+    try:
+        return mcp.add_mcp(body.name, body.scope, body.transport, body.command,
+                           body.args, body.url, body.env, body.headers, body.cwd or None)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        log.exception("mcp add failed")
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+class RemoveMcpBody(BaseModel):
+    name: str
+    scope: str
+    cwd: str = ""
+
+
+@app.post("/api/mcp/remove")
+def api_mcp_remove(body: RemoveMcpBody):
+    try:
+        return mcp.remove_mcp(body.name, body.scope, body.cwd or None)
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    except Exception as e:
+        log.exception("mcp remove failed")
         return JSONResponse({"error": str(e)}, status_code=500)
 
 

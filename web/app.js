@@ -887,15 +887,16 @@ setInterval(pollState, 4000);
 // sidebar tabs + skills
 
 function switchTab(which) {
-  const isSkills = which === "skills";
-  $("tab-sessions").classList.toggle("active", !isSkills);
-  $("tab-skills").classList.toggle("active", isSkills);
-  $("sessions-tab").classList.toggle("hidden", isSkills);
-  $("skills-tab").classList.toggle("hidden", !isSkills);
-  if (isSkills) { loadSkills(); renderSkills(); }
+  for (const t of ["sessions", "skills", "mcp"]) {
+    $("tab-" + t).classList.toggle("active", t === which);
+    $(t + "-tab").classList.toggle("hidden", t !== which);
+  }
+  if (which === "skills") { loadSkills(); renderSkills(); }
+  if (which === "mcp") onMcpTab();
 }
 $("tab-sessions").onclick = () => switchTab("sessions");
 $("tab-skills").onclick = () => switchTab("skills");
+$("tab-mcp").onclick = () => switchTab("mcp");
 
 // The runnable skills are the ones the current session reports as available
 // (init.skills — only these resolve via /name). Descriptions are enriched
@@ -1044,6 +1045,146 @@ function acceptSkill(idx, send) {
 function skillMenuOpen() {
   return !skillMenu.classList.contains("hidden") && skillMenuItems.length > 0;
 }
+
+// ---------------------------------------------------------------------------
+// MCP servers
+
+let mcpData = { global: [], local: [], project: [] };
+
+function onMcpTab() {
+  if (!$("mcp-cwd").value) {
+    $("mcp-cwd").value = (state.currentSession && state.currentSession.cwd) ||
+                         (state.projects[0] && state.projects[0].path) || "";
+  }
+  loadMcp();
+}
+
+async function loadMcp() {
+  const cwd = $("mcp-cwd").value.trim();
+  const el = $("mcp-list");
+  el.innerHTML = '<div class="mcp-empty">Loading…</div>';
+  try {
+    mcpData = await api("/api/mcp" + (cwd ? "?cwd=" + encodeURIComponent(cwd) : ""));
+    renderMcp();
+  } catch (e) {
+    el.innerHTML = '<div class="mcp-empty">Failed to load MCP config.</div>';
+  }
+}
+
+function renderMcp() {
+  const el = $("mcp-list");
+  el.innerHTML = "";
+  const hasDir = !!$("mcp-cwd").value.trim();
+  const groups = [
+    ["Global — all projects", mcpData.global, "user", true],
+    ["This directory — private", mcpData.local, "local", hasDir],
+    ["This directory — shared (.mcp.json)", mcpData.project, "project", hasDir],
+  ];
+  for (const [title, list, scope, show] of groups) {
+    if (!show) continue;
+    const head = document.createElement("div");
+    head.className = "mcp-group-head";
+    head.textContent = title;
+    el.appendChild(head);
+    if (!list || list.length === 0) {
+      const e = document.createElement("div");
+      e.className = "mcp-empty";
+      e.textContent = "No servers.";
+      el.appendChild(e);
+    } else {
+      for (const s of list) el.appendChild(mcpRow(s));
+    }
+  }
+}
+
+function mcpRow(s) {
+  const div = document.createElement("div");
+  div.className = "mcp-item";
+  const keys = [];
+  if (s.env && s.env.length) keys.push("env: " + s.env.join(", "));
+  if (s.headers && s.headers.length) keys.push("headers: " + s.headers.join(", "));
+  div.innerHTML =
+    `<div class="mcp-main"><div class="mcp-name">${escapeHtml(s.name)} ` +
+    `<span class="badge">${escapeHtml(s.transport)}</span></div>` +
+    `<div class="mcp-target">${escapeHtml(s.target)}</div>` +
+    (keys.length ? `<div class="mcp-keys">${escapeHtml(keys.join(" · "))}</div>` : "") +
+    "</div><button class=\"mcp-del\" title=\"Remove\">✕</button>";
+  div.querySelector(".mcp-del").onclick = () => removeMcp(s);
+  return div;
+}
+
+async function removeMcp(s) {
+  const ok = await openConfirm({
+    title: "Remove MCP server",
+    body: `Remove "${s.name}" from ${s.scope} scope?`,
+    okLabel: "Remove",
+  });
+  if (!ok) return;
+  try {
+    await apiPost("/api/mcp/remove", { name: s.name, scope: s.scope, cwd: $("mcp-cwd").value.trim() });
+    toast(`Removed ${s.name}`);
+    loadMcp();
+  } catch (e) { toast("Remove failed: " + e.message, true); }
+}
+
+function mcpToggleFields() {
+  const stdio = $("mcp-transport").value === "stdio";
+  $("mcp-stdio-fields").classList.toggle("hidden", !stdio);
+  $("mcp-http-fields").classList.toggle("hidden", stdio);
+  $("mcp-cwd-row").classList.toggle("hidden", $("mcp-scope").value === "user");
+}
+$("mcp-transport").onchange = mcpToggleFields;
+$("mcp-scope").onchange = mcpToggleFields;
+$("btn-mcp-load").onclick = loadMcp;
+$("mcp-cwd").addEventListener("keydown", (ev) => { if (ev.key === "Enter") loadMcp(); });
+
+$("btn-new-mcp").onclick = () => {
+  for (const id of ["mcp-name", "mcp-command", "mcp-args", "mcp-env", "mcp-url", "mcp-headers"]) {
+    $(id).value = "";
+  }
+  $("mcp-scope").value = "user";
+  $("mcp-transport").value = "stdio";
+  $("mcp-modal-cwd").value = $("mcp-cwd").value.trim();
+  mcpToggleFields();
+  $("modal-mcp").classList.remove("hidden");
+  $("mcp-name").focus();
+};
+$("btn-mcp-cancel").onclick = () => $("modal-mcp").classList.add("hidden");
+
+function parseLines(text) {
+  return text.split("\n").map((l) => l.trim()).filter(Boolean);
+}
+function parseKV(text, sep) {
+  const out = {};
+  for (const line of parseLines(text)) {
+    const i = line.indexOf(sep);
+    if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + sep.length).trim();
+  }
+  return out;
+}
+
+$("btn-mcp-create").onclick = async () => {
+  const name = $("mcp-name").value.trim();
+  if (!name) { $("mcp-name").focus(); return; }
+  const scope = $("mcp-scope").value;
+  const body = {
+    name, scope,
+    transport: $("mcp-transport").value,
+    cwd: $("mcp-modal-cwd").value.trim(),
+    command: $("mcp-command").value.trim(),
+    args: parseLines($("mcp-args").value),
+    url: $("mcp-url").value.trim(),
+    env: parseKV($("mcp-env").value, "="),
+    headers: parseKV($("mcp-headers").value, ":"),
+  };
+  try {
+    await apiPost("/api/mcp", body);
+    $("modal-mcp").classList.add("hidden");
+    if (scope !== "user" && body.cwd) $("mcp-cwd").value = body.cwd;
+    toast(`Added ${name} — start a new session to use it`);
+    loadMcp();
+  } catch (e) { toast("Add failed: " + e.message, true); }
+};
 
 // ---------------------------------------------------------------------------
 // create a personal skill
