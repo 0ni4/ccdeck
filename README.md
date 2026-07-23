@@ -1,7 +1,7 @@
 # cc-home
 
-A desktop GUI to browse, search, and resume your Claude Code sessions —
-an alternative to opcode.
+A simple desktop GUI for using Claude Code — browse, search, and resume your
+sessions, chat with streaming responses, and manage skills and MCP servers.
 
 It wraps the `claude` CLI instead of calling the API directly, so it works
 behind an external LLM gateway, inheriting whatever the CLI is configured with.
